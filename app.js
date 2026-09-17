@@ -3,6 +3,8 @@ const Game = window.AirportManagerGame;
 let airports = [];
 let selectedAirport = null;
 let state = Game.newState();
+let airportMap = null;
+let airportLayers = [];
 const list = document.getElementById('airportList');
 const msg = document.getElementById('message');
 
@@ -19,9 +21,54 @@ function update(){
  renderFlights();
 }
 function render(items=airports){list.innerHTML=items.length?items.map(a=>`<div class="airport ${selectedAirport?.icao===a.icao?'active':''}" data-icao="${a.icao}"><b>${a.icao}</b> · ${a.name}<small>${a.city||''}${a.country?`, ${a.country}`:''}</small></div>`).join(''):'<p>No airports found.</p>';list.querySelectorAll('.airport').forEach(e=>e.onclick=()=>selectAirport(e.dataset.icao));}
-async function selectAirport(icao){const a=airports.find(x=>x.icao===icao);if(!a)return;selectedAirport=a;document.getElementById('airportName').textContent=a.name;document.getElementById('airportCode').textContent=`${a.icao} · ${a.city||''}${a.country?`, ${a.country}`:''}`;render();msg.textContent=`${a.name} loaded.`;const [rw,tm,gt,im]=await Promise.all([db.from('runways').select('*').eq('airport_id',a.id),db.from('terminals').select('*').eq('airport_id',a.id),db.from('gates').select('*').eq('airport_id',a.id),db.from('airport_imagery_sources').select('*').eq('airport_id',a.id).limit(1).maybeSingle()]);renderAirportMap(rw.data||[],tm.data||[],gt.data||[],im.data);}
-function renderAirportMap(runways,terminals,gates,imagery){const map=document.getElementById('map');map.style.backgroundImage='';if(imagery?.source_url&&selectedAirport?.latitude&&selectedAirport?.longitude){const z=15,x=Math.floor((selectedAirport.longitude+180)/360*2**z),y=Math.floor((1-Math.asinh(Math.tan(selectedAirport.latitude*Math.PI/180))/Math.PI)/2*2**z);map.style.backgroundImage=`url(${imagery.source_url.replace('{z}',z).replace('{x}',x).replace('{y}',y)})`;map.style.backgroundSize='cover';}map.innerHTML=`<div class="mapOverlay"><b>${selectedAirport?.icao||''}</b><br>Runways: ${runways.length||'pending'}<br>Terminals: ${terminals.length||'pending'}<br>Gates: ${gates.length||'pending'}</div>`;}
-async function loadAirports(){msg.textContent='Loading airports...';const {data,error}=await db.from('airports').select('*').order('icao');if(error){msg.textContent=`Supabase error: ${error.message}`;return;}airports=data||[];render();update();if(airports.length)selectAirport(airports[0].icao);}
+function initMap(a){
+ if(!airportMap) airportMap=L.map('map',{zoomControl:true,preferCanvas:true});
+ airportMap.setView([a.latitude,a.longitude],14);
+ airportLayers.forEach(layer=>airportMap.removeLayer(layer)); airportLayers=[];
+ const imagery=L.tileLayer('https://global.imagery.hotosm.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'© OpenAerialMap / HOT'}).addTo(airportMap);
+ airportLayers.push(imagery);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{opacity:.18,maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(airportMap);
+ airportLayers.push(imagery);
+}
+async function loadOSM(a){
+ const q=`[out:json][timeout:25];(way["aeroway"~"^(runway|taxiway|taxilane)$"](around:8000,${a.latitude},${a.longitude});way["aeroway"="terminal"](around:8000,${a.latitude},${a.longitude});node["aeroway"~"^(gate|parking_position)$"](around:8000,${a.latitude},${a.longitude}););out body geom;`;
+ try{
+  const res=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q));
+  if(!res.ok) throw new Error(`OSM ${res.status}`);
+  const data=await res.json();
+  data.elements.forEach(el=>{
+   const tags=el.tags||{};
+   if(el.type==='way'&&el.geometry?.length){
+    const pts=el.geometry.map(p=>[p.lat,p.lon]);
+    let layer;
+    if(tags.aeroway==='runway') layer=L.polyline(pts,{color:'#e9edf2',weight:10,opacity:.9}).bindTooltip(tags.ref||'Runway');
+    else if(tags.aeroway==='terminal') layer=L.polygon(pts,{color:'#38bdf8',fillColor:'#38bdf8',fillOpacity:.25,weight:2}).bindTooltip(tags.name||'Terminal');
+    else layer=L.polyline(pts,{color:'#f59e0b',weight:4,opacity:.65}).bindTooltip(tags.ref||tags.name||'Taxiway');
+    layer.addTo(airportMap); airportLayers.push(layer);
+   } else if(el.type==='node'&&el.lat&&el.lon){
+    const label=tags.ref||tags.name||(tags.aeroway==='parking_position'?'Parking position':'Gate');
+    const layer=L.circleMarker([el.lat,el.lon],{radius:4,color:'#facc15',fillColor:'#facc15',fillOpacity:.9}).bindTooltip(label);
+    layer.addTo(airportMap); airportLayers.push(layer);
+   }
+  });
+  msg.textContent=`${a.name} loaded from OpenStreetMap + OpenAerialMap imagery.`;
+ }catch(e){msg.textContent=`${a.name} loaded. Live airport geometry unavailable right now.`;console.warn(e);}
+}
+async function selectAirport(icao){
+ const a=airports.find(x=>x.icao===icao);if(!a)return;
+ selectedAirport=a;
+ document.getElementById('airportName').textContent=a.name;
+ document.getElementById('airportCode').textContent=`${a.icao} · ${a.city||''}${a.country?`, ${a.country}`:''}`;
+ render();
+ if(!airportMap)initMap(a); else airportMap.setView([a.latitude,a.longitude],14);
+ await loadOSM(a);
+}
+async function loadAirports(){
+ msg.textContent='Loading airports...';
+ const {data,error}=await db.from('airports').select('*').order('icao');
+ if(error){msg.textContent=`Supabase error: ${error.message}`;return;}
+ airports=data||[];render();update();if(airports.length)selectAirport(airports[0].icao);
+}
 function addFlight(){const code=document.getElementById('aircraftType').value;const num=document.getElementById('flightNumber').value.trim()||'FLIGHT';const result=Game.schedule(state,code,num,'A1');if(!result[0]){msg.textContent=result[1];return;}Game.event(state,'Flight accepted',`${num} ${code} entered turnaround queue.`);msg.textContent=`${num} turnaround started.`;update();}
 function advanceSim(){if(!state.flights.length){msg.textContent='No active turnarounds.';return;}Game.tick(state);msg.textContent='Simulation advanced 10%. Complete flights generate revenue.';update();}
 function buyVehicle(){buyVehicleType('pushback');}
