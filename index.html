@@ -24,6 +24,7 @@
 <div class="controlGrid">
 <section class="panelCard"><h2>Operations</h2><div class="formRow"><select id="aircraftType"><option value="B738">Boeing 737-800</option><option value="A320">Airbus A320</option><option value="A321">Airbus A321</option><option value="B77W">Boeing 777-300ER</option><option value="A359">Airbus A350-900</option><option value="A388">Airbus A380</option></select><input id="flightNumber" value="TK546" placeholder="Flight number" /></div><button onclick="addFlight()">🛫 Start Turnaround</button><button onclick="advanceSim()">⏱ Advance 10%</button><div id="flightQueue" class="queue"></div></section>
 <section class="panelCard"><h2>Ground & Staff</h2><button onclick="buyVehicle()">🚜 Buy Pushback ($15k)</button><button onclick="buyVehicleType('tug')">🚛 Buy Tug ($22k)</button><button onclick="buyVehicleType('fuel')">⛽ Buy Fuel Truck ($30k)</button><button onclick="hireATC()">🎧 Hire ATC ($8k)</button><button onclick="hireRole('ramp')">👷 Hire Ramp ($4.5k)</button></section>
+<section class="panelCard"><h2>💳 Store</h2><p>Enter a developer reward code.</p><div class="formRow"><input id="storeCode" type="text" inputmode="numeric" maxlength="12" placeholder="Enter code" /><button onclick="redeemCode()">Redeem</button></div><small>Developer test codes are local to this game build.</small></section>
 <section class="panelCard"><h2>Finance</h2><div id="finance">Revenue $0<br>Expenses $0<br>Completed 0</div></section>
 <section class="panelCard"><h2>Events</h2><div id="events">No events yet.</div></section>
 </div>
