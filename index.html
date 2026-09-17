@@ -4,23 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Airport Manager</title>
-  <meta name="description" content="Airport Manager - browser prototype" />
+  <meta name="description" content="Airport Manager - Supabase-powered airport management game" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topbar">
-    <div><strong>✈ AIRPORT MANAGER</strong><span class="badge">WEB PROTOTYPE</span></div>
+    <div><strong>✈ AIRPORT MANAGER</strong><span class="badge">SUPABASE</span></div>
     <div class="stats"><span>💰 $250,000</span><span>⭐ Level 1</span></div>
   </header>
   <main class="layout">
     <aside class="panel airports">
       <h2>Airports</h2>
       <input id="search" placeholder="Search ICAO or airport..." />
-      <div id="airportList"></div>
+      <div id="airportList"><p>Loading airports...</p></div>
     </aside>
     <section class="game">
       <div class="airportHeader">
-        <div><h1 id="airportName">Istanbul Airport</h1><p id="airportCode">LTFM · Istanbul, Türkiye</p></div>
+        <div><h1 id="airportName">Loading airport...</h1><p id="airportCode">...</p></div>
         <button id="expandBtn">＋ Expand Airport</button>
       </div>
       <div class="map" id="map">
@@ -39,9 +39,11 @@
         <button onclick="hireATC()">🎧 Hire ATC ($8k)</button>
         <button onclick="addFlight()">🛫 Schedule Flight</button>
       </div>
-      <p id="message" class="message">Select an airport to begin managing it.</p>
+      <p id="message" class="message">Connecting to the airport database...</p>
     </section>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
