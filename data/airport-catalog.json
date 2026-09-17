@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "source": "Airport Manager curated starter catalog",
+  "airports": [
+    {"icao":"LTFM","name":"Istanbul Airport","city":"Istanbul","country":"Türkiye","runways":["17L/35R","17R/35L","18/36"]},
+    {"icao":"OMDB","name":"Dubai International","city":"Dubai","country":"UAE","runways":["12L/30R","12R/30L"]},
+    {"icao":"EGLL","name":"London Heathrow","city":"London","country":"UK","runways":["09L/27R","09R/27L"]},
+    {"icao":"KJFK","name":"John F. Kennedy International","city":"New York","country":"USA","runways":["04L/22R","04R/22L","13L/31R","13R/31L"]},
+    {"icao":"LFPG","name":"Paris Charles de Gaulle","city":"Paris","country":"France","runways":["08L/26R","08R/26L","09L/27R","09R/27L"]},
+    {"icao":"FZAA","name":"N'Djili International","city":"Kinshasa","country":"DR Congo","runways":["06/24","07/25"]}
+  ]
+}
