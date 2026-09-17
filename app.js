@@ -16,15 +16,10 @@ function update() {
 }
 
 function render(items = airports) {
-  if (!items.length) {
-    list.innerHTML = '<p>No airports found.</p>';
-    return;
-  }
-  list.innerHTML = items.map((a, i) => `
+  list.innerHTML = items.length ? items.map((a, i) => `
     <div class="airport ${selectedAirport?.icao === a.icao || (!selectedAirport && i === 0) ? 'active' : ''}" data-icao="${a.icao}">
-      <b>${a.icao}</b> · ${a.name}
-      <small>${a.city || ''}${a.country ? `, ${a.country}` : ''}</small>
-    </div>`).join('');
+      <b>${a.icao}</b> · ${a.name}<small>${a.city || ''}${a.country ? `, ${a.country}` : ''}</small>
+    </div>`).join('') : '<p>No airports found.</p>';
   list.querySelectorAll('.airport').forEach(el => el.addEventListener('click', () => selectAirport(el.dataset.icao)));
 }
 
@@ -37,21 +32,34 @@ async function selectAirport(icao) {
   msg.textContent = `${airport.name} loaded from Supabase.`;
   render();
 
-  const { data: runways } = await db.from('runways').select('*').eq('airport_id', airport.id);
-  const { data: terminals } = await db.from('terminals').select('*').eq('airport_id', airport.id);
-  const { data: gates } = await db.from('gates').select('*').eq('airport_id', airport.id);
-  renderAirportMap(runways || [], terminals || [], gates || []);
+  const [rw, tm, gt, im] = await Promise.all([
+    db.from('runways').select('*').eq('airport_id', airport.id),
+    db.from('terminals').select('*').eq('airport_id', airport.id),
+    db.from('gates').select('*').eq('airport_id', airport.id),
+    db.from('airport_imagery_sources').select('*').eq('airport_id', airport.id).limit(1).maybeSingle()
+  ]);
+  renderAirportMap(rw.data || [], tm.data || [], gt.data || [], im.data);
 }
 
-function renderAirportMap(runways, terminals, gates) {
+function renderAirportMap(runways, terminals, gates, imagery) {
   const map = document.getElementById('map');
-  const runwayLabels = runways.length ? runways.map(r => r.ident).join(' · ') : 'Runways loading / not imported yet';
-  const terminalLabels = terminals.length ? terminals.map(t => t.name).join(' · ') : 'Terminals not imported yet';
-  const gateLabels = gates.length ? gates.slice(0, 12).map(g => g.name).join(' · ') : 'Gates not imported yet';
-  map.innerHTML = `
-    <div class="runway r1">${runwayLabels}</div>
-    <div class="terminal t1">${terminalLabels}</div>
-    <div class="terminal t2">GATES: ${gateLabels}</div>`;
+  const lat = selectedAirport?.latitude;
+  const lon = selectedAirport?.longitude;
+  const zoom = 15;
+  const satellite = imagery?.source_url;
+  if (satellite && lat && lon) {
+    const x = Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
+    const y = Math.floor((1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+    map.style.backgroundImage = `url(${satellite.replace('{z}', zoom).replace('{x}', x).replace('{y}', y)})`;
+    map.style.backgroundSize = 'cover';
+    map.style.backgroundPosition = 'center';
+  } else {
+    map.style.backgroundImage = '';
+  }
+  const runwayLabels = runways.length ? runways.map(r => r.ident).join(' · ') : 'Runways pending import';
+  const terminalLabels = terminals.length ? terminals.map(t => t.name).join(' · ') : 'Terminals pending import';
+  const gateLabels = gates.length ? gates.slice(0, 16).map(g => g.name).join(' · ') : 'Gates pending import';
+  map.innerHTML = `<div class="mapOverlay"><b>${selectedAirport?.icao || ''}</b><br>${runwayLabels}<br>${terminalLabels}<br>${gateLabels}</div>`;
 }
 
 async function loadAirports() {
@@ -71,35 +79,24 @@ async function loadAirports() {
 
 function buyVehicle() {
   if (state.money < 15000) return msg.textContent = 'Not enough money.';
-  state.money -= 15000;
-  state.vehicles++;
-  msg.textContent = 'New ground-handling vehicle purchased.';
-  update();
+  state.money -= 15000; state.vehicles++;
+  msg.textContent = 'New ground-handling vehicle purchased.'; update();
 }
-
 function hireATC() {
   if (state.money < 8000) return msg.textContent = 'Not enough money.';
-  state.money -= 8000;
-  state.atc++;
-  msg.textContent = 'ATC controller hired.';
-  update();
+  state.money -= 8000; state.atc++;
+  msg.textContent = 'ATC controller hired.'; update();
 }
-
 function addFlight() {
-  state.aircraft++;
-  state.passengers += 180;
-  state.money += 5000;
-  msg.textContent = 'Flight scheduled. Turnaround revenue received.';
-  update();
+  state.aircraft++; state.passengers += 180; state.money += 5000;
+  msg.textContent = 'Flight scheduled. Turnaround revenue received.'; update();
 }
 
 document.getElementById('expandBtn').onclick = () => {
   const cost = 50000 + state.expansions * 25000;
   if (state.money < cost) return msg.textContent = `Expansion costs $${cost.toLocaleString()}.`;
-  state.money -= cost;
-  state.expansions++;
-  msg.textContent = 'Airport expanded: new capacity and facilities unlocked.';
-  update();
+  state.money -= cost; state.expansions++;
+  msg.textContent = 'Airport expanded: new capacity and facilities unlocked.'; update();
 };
 
 document.getElementById('search').oninput = e => {
