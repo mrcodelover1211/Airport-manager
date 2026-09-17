@@ -4,46 +4,32 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Airport Manager</title>
-  <meta name="description" content="Airport Manager - Supabase-powered airport management game" />
+  <meta name="description" content="Airport Manager - airport management simulator" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div><strong>✈ AIRPORT MANAGER</strong><span class="badge">SUPABASE</span></div>
-    <div class="stats"><span>💰 $250,000</span><span>⭐ Level 1</span></div>
-  </header>
-  <main class="layout">
-    <aside class="panel airports">
-      <h2>Airports</h2>
-      <input id="search" placeholder="Search ICAO or airport..." />
-      <div id="airportList"><p>Loading airports...</p></div>
-    </aside>
-    <section class="game">
-      <div class="airportHeader">
-        <div><h1 id="airportName">Loading airport...</h1><p id="airportCode">...</p></div>
-        <button id="expandBtn">＋ Expand Airport</button>
-      </div>
-      <div class="map" id="map">
-        <div class="runway r1">18/36</div><div class="runway r2">17L/35R</div><div class="runway r3">17R/35L</div>
-        <div class="terminal t1">TERMINAL 1</div><div class="terminal t2">CARGO</div>
-        <div class="gate g1">A</div><div class="gate g2">B</div><div class="gate g3">C</div><div class="gate g4">D</div>
-      </div>
-      <div class="cards">
-        <article><h3>Aircraft</h3><strong id="aircraft">3</strong><p>on the ground</p></article>
-        <article><h3>Passengers</h3><strong id="passengers">1,240</strong><p>today</p></article>
-        <article><h3>Ground Handling</h3><strong id="vehicles">4</strong><p>vehicles</p></article>
-        <article><h3>ATC Staff</h3><strong id="atc">6</strong><p>on duty</p></article>
-      </div>
-      <div class="actions">
-        <button onclick="buyVehicle()">🚜 Buy Vehicle ($15k)</button>
-        <button onclick="hireATC()">🎧 Hire ATC ($8k)</button>
-        <button onclick="addFlight()">🛫 Schedule Flight</button>
-      </div>
-      <p id="message" class="message">Connecting to the airport database...</p>
-    </section>
-  </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+<header class="topbar"><div><strong>✈ AIRPORT MANAGER</strong><span class="badge">LIVE SIM</span></div><div class="stats"><span id="money">💰 $250,000</span><span id="level">⭐ Level 1</span><span id="reputation">🏆 Rep 50</span></div></header>
+<main class="layout">
+<aside class="panel airports"><h2>Airports</h2><input id="search" placeholder="Search ICAO or airport..." /><div id="airportList"><p>Loading airports...</p></div></aside>
+<section class="game">
+<div class="airportHeader"><div><h1 id="airportName">Loading airport...</h1><p id="airportCode">...</p></div><button id="expandBtn">＋ Expand Airport</button></div>
+<div class="map" id="map"><div class="mapOverlay">Loading airport map...</div></div>
+<div class="cards">
+<article><h3>Aircraft</h3><strong id="aircraft">0</strong><p>managed today</p></article>
+<article><h3>Passengers</h3><strong id="passengers">0</strong><p>served</p></article>
+<article><h3>Ground Vehicles</h3><strong id="vehicles">0</strong><p>available</p></article>
+<article><h3>ATC Staff</h3><strong id="atc">0</strong><p>controllers</p></article>
+</div>
+<div class="controlGrid">
+<section class="panelCard"><h2>Operations</h2><div class="formRow"><select id="aircraftType"><option value="B738">Boeing 737-800</option><option value="A320">Airbus A320</option><option value="A321">Airbus A321</option><option value="B77W">Boeing 777-300ER</option><option value="A359">Airbus A350-900</option><option value="A388">Airbus A380</option></select><input id="flightNumber" value="TK546" placeholder="Flight number" /></div><button onclick="addFlight()">🛫 Start Turnaround</button><button onclick="advanceSim()">⏱ Advance 10%</button><div id="flightQueue" class="queue"></div></section>
+<section class="panelCard"><h2>Ground & Staff</h2><button onclick="buyVehicle()">🚜 Buy Pushback ($15k)</button><button onclick="buyVehicleType('tug')">🚛 Buy Tug ($22k)</button><button onclick="buyVehicleType('fuel')">⛽ Buy Fuel Truck ($30k)</button><button onclick="hireATC()">🎧 Hire ATC ($8k)</button><button onclick="hireRole('ramp')">👷 Hire Ramp ($4.5k)</button></section>
+<section class="panelCard"><h2>Finance</h2><div id="finance">Revenue $0<br>Expenses $0<br>Completed 0</div></section>
+<section class="panelCard"><h2>Events</h2><div id="events">No events yet.</div></section>
+</div>
+<p id="message" class="message">Connecting to the airport database...</p>
+</section></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="game-system.js"></script>
+<script src="app.js"></script>
+</body></html>
