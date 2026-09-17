@@ -26,9 +26,8 @@ function initMap(a){
  airportMap.setView([a.latitude,a.longitude],14);
  airportLayers.forEach(layer=>airportMap.removeLayer(layer)); airportLayers=[];
  const imagery=L.tileLayer('https://global.imagery.hotosm.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'© OpenAerialMap / HOT'}).addTo(airportMap);
- airportLayers.push(imagery);
- L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{opacity:.18,maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(airportMap);
- airportLayers.push(imagery);
+ const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{opacity:.18,maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(airportMap);
+ airportLayers.push(imagery,osm);
 }
 async function loadOSM(a){
  const q=`[out:json][timeout:25];(way["aeroway"~"^(runway|taxiway|taxilane)$"](around:8000,${a.latitude},${a.longitude});way["aeroway"="terminal"](around:8000,${a.latitude},${a.longitude});node["aeroway"~"^(gate|parking_position)$"](around:8000,${a.latitude},${a.longitude}););out body geom;`;
@@ -60,7 +59,7 @@ async function selectAirport(icao){
  document.getElementById('airportName').textContent=a.name;
  document.getElementById('airportCode').textContent=`${a.icao} · ${a.city||''}${a.country?`, ${a.country}`:''}`;
  render();
- if(!airportMap)initMap(a); else airportMap.setView([a.latitude,a.longitude],14);
+ if(!airportMap)initMap(a); else {airportLayers.forEach(layer=>airportMap.removeLayer(layer));airportLayers=[];airportMap.setView([a.latitude,a.longitude],14);initMap(a);}
  await loadOSM(a);
 }
 async function loadAirports(){
